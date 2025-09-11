@@ -47,43 +47,19 @@ streamlit run app/app.py
 26. To push files to git 
 git init 
 git branch -M main 
-git remote add origin https://github.com/data-guru0/ANIME-RECOMMENDER-SYSTEM-LLMOPS.git 
+git remote add origin https://github.com/sreekanthmuni66/ANIME_RECOMMENDER_SYSTEM_LLMOPS.git  
 git add . 
 git commit -m "commit"
 git push origin main 
-
-
-
-Docker commands
-1. docker ps 
-2. docker ps -a
-3. docker images
-4. docker pull hello-world
-5. docker images
-6. docker run hello-world
-7. docker ps -a
-8. 
-
-
-Groq Models
-https://console.groq.com/docs/models
-
-To trigger build_pipeline
-python pipeline/build_pipeline.py
-
-streamlit run app/app.py
-
-Pushing code to github 
-
+27. Deploying application to GCP
 Login to GCP 
-Searcn VM
+Searcn VM instances
 Create new 
-Machine Type: E2 (standard/16GB)
+Machine Type: E2 (standard/16GB/2 core)
 OS - Ubuntu 24.04 LTS x86/64 amd64 noble image built on 2025-06-06
 Size: 150 GB 
 Go to Networking
-Allow HTTP, HTTPS, Load Balancer Health Checks
-Enable IP Forwarding
+Allow HTTP, HTTPS, Load Balancer Health Checks, Enable IP Forwarding
 Click on "Create" 
 
 Once VM instance is created
@@ -132,9 +108,152 @@ newgrp docker
 4. Verify that you can run docker commands without sudo.
 docker run hello-world
 
+Post install: 
+https://docs.docker.com/engine/install/linux-postinstall/
+
+sudo systemctl enable docker.service
+sudo systemctl enable containerd.service
+
+Now docker setup is done
+docker version 
+
 Install minikube 
 https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download
 
+Commands:
+curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+minikube start
+
+
 Install kubectl 
 https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
+
+Commands:
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+kubectl version --client
+
+Refer: https://github.com/data-guru0/ANIME-RECOMMENDER-SYSTEM-LLMOPS/blob/main/FULL_DOCUMENTATION.md
+
+Github integration with Local and VM
+====================================
+Git Link: https://github.com/sreekanthmuni66/ANIME_RECOMMENDER_SYSTEM_LLMOPS
+git clone https://github.com/sreekanthmuni66/ANIME_RECOMMENDER_SYSTEM_LLMOPS.git
+ls
+cd ANIME_RECOMMENDER_SYSTEM_LLMOPS/
+ls 
+
+git config --global user.email "sreekanthmuni66@gmail.com"
+git config --global user.name "sreekanthmuni66"
+
+git add .
+git commit -m "commit"
+git push origin main
+Once you enter it will ask for username: sreekanthmuni66 (Enter)
+Now, it will ask for passowd: 
+
+Go to github, profile, settings, Developer Settings, Personal Access tokens, Create new token
+
+
+git pull origin main 
+
+GCP Firewall rule setup
+=======================
+Login to GCP
+Search for VPC network 
+Click on Firewall 
+Click on "Create firewall rule"
+Name: allow-jenkins
+Description: Allow all traffic (for Jenkins demo)
+Logs: Off
+Network: default 
+Direction: ingress 
+Action: allow 
+Targets: All instances 
+Source IP ranges: 0.0.0.0/0 
+Allowed protocols and ports: all
+Click on "Create" 
+
+Deployment of App on kubernetes
+===============================
+##Point Docker to minikube 
+eval $(minikube docker-env)
+
+docker build -t llmops-app:latest . 
+docker images 
+
+kubectl create secret generic llmops-secrets \
+  --from-literal=GROQ_API_KEY="api_key1" \
+  --from-literal=HUGGINGFACEHUB_API_TOKEN="api_key2"
+
+kubectl apply -f llmops-k8s.yaml
+
+kubectl get pods 
+kubectl get svc 
+# you will see pods running 
+
+# Do minikube tunnel on one terminal 
+minikube tunnel 
+
+# Open another terminal 
+kubectl port-forward svc/llmops-service 8501:80 --address 0.0.0.0 
+
+##Now copy external ip and :8501 and see ur app there
+You can see your streamlit app running here. 
+
+Monitoring kubernetes using Grafana Cloud
+=========================================
+
+# Open another VM terminal for Grafana cloud 
+kubectl get ns 
+kubectl create ns Monitoring
+kubectl get ns 
+
+# Make account on Grafana Cloud 
+# Install HELM - Search on Google 
+- You will get 3 commands
+
+https://helm.sh/docs/intro/install/
+$ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+$ chmod 700 get_helm.sh
+$ ./get_helm.sh
+
+
+
+Come to Grafana Cloud -> Left pane observability -> kubertes -> Start sending data 
+In backend installation -> Hit install 
+Give your clustername and namespace there: 
+cluster-name: minikube and 
+namespace: monitoring (in our case)
+Select kubernetes 
+Keep only things on as default 
+Here only create new access token give name lets give minikube-token & create it and save it somewhere
+Select helm and deploy helm charts is already generated 
+
+Come to terminal --> Create a file 
+vi values.yaml 
+
+Paste all from there to your file now remove last EOF part & also initial part save that initial part we need it. 
+
+Docker commands
+1. docker ps 
+2. docker ps -a
+3. docker images
+4. docker pull hello-world
+5. docker images
+6. docker run hello-world
+7. docker ps -a
+8. 
+
+
+Groq Models
+https://console.groq.com/docs/models
+
+To trigger build_pipeline
+python pipeline/build_pipeline.py
+
+streamlit run app/app.py
+
 
